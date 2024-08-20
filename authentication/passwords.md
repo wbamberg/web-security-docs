@@ -2,7 +2,7 @@
 
 The original authentication method on the web, and probably still the most common, is the password.
 
-Password authentication consists of two flows: registration (or signing up), and signing in.
+Password authentication consists of two main flows: registration (or signing up), and signing in.
 
 We can picture registration, in its most basic form, as something like this:
 
@@ -22,7 +22,7 @@ Signing in then looks something like this:
 
 ## Common attacks
 
-Looking at this flow, we can see some of the ways an attacker can impersonate the user.
+Looking at these flows, we can see some of the ways an attacker can impersonate the user.
 
 1. **Guessing**: an attacker could try many different possible passwords for a user. Attackers typically use password lists which contain many of the most common passwords.
 2. **Credential stuffing**: an attacker could buy a collection of username/password pairs from a previous data breach on a different site, and then try them on the target site in the hope that a user has used the same password for both sites.
