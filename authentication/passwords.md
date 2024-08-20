@@ -1,10 +1,6 @@
 # Passwords
 
-The original authentication method on the web, and probably still the most common, is the password.
-
-Password authentication consists of two main flows: registration (or signing up), and signing in.
-
-We can picture registration, in its most basic form, as something like this:
+The original authentication method on the web, and probably still the most common, is the password. Password authentication consists of two main flows: registration (or signing up), and signing in. We can picture registration, in its most basic form, as something like this:
 
 ![Registration using a password.](password-basic-register.svg)
 
