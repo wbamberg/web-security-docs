@@ -1,22 +1,22 @@
 # Passwords
 
-The original authentication method on the web, and probably still the most common, is the password. Password authentication consists of two main flows: registration (or signing up), and signing in. We can picture registration, in its most basic form, as something like this:
+The original authentication method on the web, and probably still the most common, is the password.
 
-![Registration using a password.](password-basic-register.svg)
+In a password authentication system, when the user signs up:
 
 1. The user supplies a new username and password, for example by entering it in a `<form>` element in the website.
 2. The web page sends the username and password to the server, for example by submitting the form in a `POST` request.
 3. The server creates a new record for this user in its database. The key is the username and the password is stored under it.
 
-Signing in then looks something like this:
+![Registration using a password.](password-basic-register.svg)
 
-![Signing in using a password.](password-basic-signin.svg)
+When the user signs in:
 
 1. The user supplies the username and password.
 2. The web page sends the username and password to the server.
 3. The server retrieves the stored password for the user, and compares the stored password with the one it just received.
 
-## Common attacks
+![Signing in using a password.](password-basic-signin.svg)
 
 Looking at these flows, we can see some of the ways an attacker can impersonate the user.
 
@@ -26,7 +26,63 @@ Looking at these flows, we can see some of the ways an attacker can impersonate 
 4. **Database compromise**: an attacker could break into the server and retrieve the database of stored records.
 5. **Phishing**: an attacker could trick the user into handing their password to the attacker. For example, an attacker might create a page that looks just like the target site's login page, and send the target user an email containing a link to the fake page, asking them to sign in.
 
-In this article we'll outline recommended practices for implementing password-based authentication. These are intended to reduce these threats, but as we'll see, it is impossible to eliminate them.
+## Password authentication flows
+
+A password authentication system consists of four main flows:
+
+- **Registration**
+- **Sign in**
+- **Password reset**
+- **Password change**
+
+### Registration
+
+In registration, a new user supplies a new username and password. The site is very likely to ask for an email address as well, and may choose to use the email address as the username.
+
+The site should ask for this information using an HTML `<form>` element dedicated to registration. The form should follow the practices described in [Form design](#form-design).
+
+The form should ask for the user to enter the password twice.
+
+When the user submits the form, the website front end should sent the username, both copies of the password, and the email address to the server, using an HTTP `POST` request. This must take place over TLS, to prevent attackers from intercepting the password in transit. See [Sending passwords](#sending-passwords).
+
+When the server receives the `POST` request, it validates the username and password:
+
+- The username must not match an existing username.
+- The copies of the password must match each other.
+- The password itself may be validated in various ways: see [Choosing passwords](#choosing-passwords) for more details.
+
+The client may also validate data before sending it to the server, but this is only as a convenience to users: the server must still validate the data as well.
+
+If any errors occur the server responds with an error message. Otherwise the server [stores the password](#storing-passwords) as a record in its database, keyed by the username.
+
+#### Email verification
+
+If the website is intending to use email in the password reset flow, then the server must also check that the email address belongs to the user signing up. To do this, the server typically generates a random token and sets it as a parameter to a verification URL:
+
+```
+https://example.org/verify?<random-token>
+```
+
+The server then sends an email to the address the user gave, which asks the user to click a link to this URL. The page can then extract that token and use it to find the user's record in the database. It can then mark the email address as verified.
+
+### Sign in
+
+To sign in, the user enters their username and password using an HTML `<form>` element dedicated to sign-in. The form should follow the practices described in [Form design](#form-design).
+
+When the user submits the form, the website front end should sent the username and password to the server, using an HTTP `POST` request. Again, this must take place over TLS, to prevent attackers from intercepting the password in transit. See [Sending passwords](#sending-passwords).
+
+When the server receives the `POST` request, the server:
+
+- Retrieves the record for the supplied username.
+- If a record exists, compares the supplied password with the value in the record.
+
+If the comparison succeeds, the server signs the user in and returns success.
+
+If the record was not found or the comparison fails, the server must return the same error message in both cases. Otherwise clients can determine whether an account exists, and can use this to execute further attacks.
+
+### Password reset
+
+### Password change
 
 ## Password managers
 
@@ -45,7 +101,38 @@ Password managers bring new risks to the security landscape by providing a new t
 
 However, password managers help reduce the threat of guessing and credential stuffing attacks, by making it much easier for users to have strong passwords and reducing the degree of password reuse. They can also help with phishing attacks, since a password manager will know that `paypa1.com` is not `paypal.com`, and will not autofill its login form.
 
-So password managers provide a net security benefit, and developers should help them integrate with their websites..
+So password managers provide a net security benefit, and developers should help them integrate with their websites.
+
+## Form design
+
+Password managers help users choose stronger passwords and reduce the likelihood of password reuse. Following the practices listed below helps password managers work with your site:
+
+- Registration, login, password change, and password reset processes should each have their own `<form>` element.
+- Forms should give a clear indication that the form has been submitted. This means either navigating to another page on submission, or simulating a navigation with `History.pushState()` or `History.replaceState()`.
+- Individual `<input>` elements should use the correct `type`:
+  - `"text"` or `"email"` for usernames
+  - `"password"` for passwords.
+- Individual `<input>` elements should use the correct `autocomplete` attribute:
+  - `"username"` for username
+  - `"new-password"` for creating a new password, in registration, password change, or password reset forms
+  - `"current-password"` for entering an existing password, in login, password change, or password reset forms
+- Forms should use hidden fields for information that the user does not have to enter, but that can provide a hint to password managers. For example, the user may not have to enter the username in a change password from, but the username can help a password manager know which password to enter.
+
+For more information, see:
+
+- [Sign-in form best practices](https://web.dev/articles/sign-in-form-best-practices#new-password)
+- [Making password managers play ball with your login form](https://hidde.blog/making-password-managers-play-ball-with-your-login-form/)
+- [Create Amazing Password Forms](https://www.chromium.org/developers/design-documents/create-amazing-password-forms/)
+
+## Sending passwords
+
+To reduce the risk of an attacker intercepting passwords in transit, a site must use TLS for all pages where the user enters a password.
+
+Additionally, sites must use TLS for all pages served to a logged-in user, or an attacker will be able to intercept the session identifier and hijack the session.
+
+Sites are very strongly encouraged to use TLS for all pages, and many features of the modern web will not work for pages not served over TLS.
+
+TODO: better docs on how to set this up? Using Let's Encrypt or a hosting service?
 
 ## Choosing passwords
 
@@ -71,37 +158,6 @@ For more information, see:
 - [OWASP Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html#implement-proper-password-strength-controls)
 - [NIST Digital Identity Guidelines: Authentication and Lifecycle Management](https://pages.nist.gov/800-63-3/sp800-63b.html)
 - [Passwords Evolved: Authentication Guidance for the Modern Era - Troy Hunt](https://www.troyhunt.com/passwords-evolved-authentication-guidance-for-the-modern-era/)
-
-## Form design for password managers
-
-Password managers help users choose stronger passwords and reduce the likelihood of password reuse. Following the practices listed below helps password managers work with your site:
-
-- Registration, login, and change password processes should each have their own `<form>` element.
-- Forms should give a clear indication that the form has been submitted. This means either navigating to another page on submission, or simulating a navigation with `History.pushState()` or `History.replaceState()`.
-- Individual `<input>` elements should use the correct `type`:
-  - `"text"` or `"email"` for usernames
-  - `"password"` for passwords.
-- Individual `<input>` elements should use the correct `autocomplete` attribute:
-  - `"username"` for username
-  - `"new-password"` for creating a new password, in registration or password change forms
-  - `"current-password"` for entering an existing password, in login or password change forms.
-- Forms should use hidden fields for information that the user does not have to enter, but that can provide a hint to password managers. For example, the user may not have to enter the username in a change password from, but the username can help a password manager know which password to enter.
-
-For more information, see:
-
-- [Sign-in form best practices](https://web.dev/articles/sign-in-form-best-practices#new-password)
-- [Making password managers play ball with your login form](https://hidde.blog/making-password-managers-play-ball-with-your-login-form/)
-- [Create Amazing Password Forms](https://www.chromium.org/developers/design-documents/create-amazing-password-forms/)
-
-## Sending passwords
-
-To reduce the risk of an attacker intercepting passwords in transit, a site must use TLS for registration and login pages.
-
-Additionally, sites must use TLS for all pages served to a logged-in user, or an attacker will be able to intercept the session identifier and hijack the session.
-
-Sites are very strongly encouraged to use TLS for all pages, and many features of the modern web will not work for pages not served over TLS.
-
-TODO: better docs on how to set this up? Using Let's Encrypt or a hosting service?
 
 ## Storing passwords
 
@@ -152,10 +208,3 @@ Websites should use standard algorithms to hash passwords. These algorithms supp
 4. [PBKDF2](https://en.wikipedia.org/wiki/PBKDF2)
 
 Websites should use password storage and verification functions provided by a reputable framework, rather than trying to implement their own. For example, [Django](https://docs.djangoproject.com/en/5.0/topics/auth/passwords/) uses PBKDF2 by default but enables you to use a different algorithm if you choose.
-'
-
-## more
-
-- no password hints
-- no regular changes
-- notify users of abnormal behavior
