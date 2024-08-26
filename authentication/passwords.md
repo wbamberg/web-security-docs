@@ -28,12 +28,13 @@ Looking at these flows, we can see some of the ways an attacker can impersonate 
 
 ## Password authentication flows
 
-A password authentication system consists of four main flows:
+A password authentication system consists of three main flows:
 
-- **Registration**
-- **Sign in**
-- **Password reset**
-- **Password change**
+- **[Registration](#registration)**
+- **[Sign in](#sign-in)**
+- **[Password reset](password-reset)**
+
+In the next few sections we'll go over these flows. The implementation we'll describe isn't the only possible one, but it includes the most common good-practice choices.
 
 ### Registration
 
@@ -41,9 +42,9 @@ In registration, a new user supplies a new username and password. The site is ve
 
 The site should ask for this information using an HTML `<form>` element dedicated to registration. The form should follow the practices described in [Form design](#form-design).
 
-The form should ask for the user to enter the password twice.
+The form typically asks for the user to enter the password twice.
 
-When the user submits the form, the website front end should sent the username, both copies of the password, and the email address to the server, using an HTTP `POST` request. This must take place over TLS, to prevent attackers from intercepting the password in transit. See [Sending passwords](#sending-passwords).
+When the user submits the form, the website front end sends the username, both copies of the password, and the email address to the server, using an HTTP `POST` request. This must take place over TLS, to prevent attackers from intercepting the password in transit. See [Sending passwords](#sending-passwords).
 
 When the server receives the `POST` request, it validates the username and password:
 
@@ -63,13 +64,13 @@ If the website is intending to use email in the password reset flow, then the se
 https://example.org/verify?<random-token>
 ```
 
-The server then sends an email to the address the user gave, which asks the user to click a link to this URL. The page can then extract that token and use it to find the user's record in the database. It can then mark the email address as verified.
+The server then sends an email to the address the user gave. The email asks the user to click a link to the verification URL. The page can then extract that token and use it to find the user's record in the database. It can then mark the email address as verified.
 
 ### Sign in
 
 To sign in, the user enters their username and password using an HTML `<form>` element dedicated to sign-in. The form should follow the practices described in [Form design](#form-design).
 
-When the user submits the form, the website front end should sent the username and password to the server, using an HTTP `POST` request. Again, this must take place over TLS, to prevent attackers from intercepting the password in transit. See [Sending passwords](#sending-passwords).
+When the user submits the form, the website front end sends the username and password to the server, using an HTTP `POST` request. Again, this must take place over TLS, to prevent attackers from intercepting the password in transit. See [Sending passwords](#sending-passwords).
 
 When the server receives the `POST` request, the server:
 
@@ -82,13 +83,38 @@ If the record was not found or the comparison fails, the server must return the 
 
 ### Password reset
 
-### Password change
+The password reset flow enables a user to reset the password, when they have forgotten or lost it. This usually relies on the user having supplied (and then verified) their email address when they registered.
 
-## Password managers
+When the user asks to reset their password, the website asks the user to enter their email address. The website may ask the user to solve a CAPTCHA at this point, to make it harder for a malicious third party to spam a legitimate user.
 
-A password manager is an application that enables users to store passwords, so they don't have to remember them. Password managers may also autofill passwords in login forms and generate strong passwords for users.
+The website back end then checks whether it has a record for this email address. _Whether or not it does have a record_, the website gives the same message to the user: that it has sent an email to the address given, with further instructions. Providing the same message in both cases prevents an attacker from finding out whether a given email address is associated with an account: this information could be used in further attacks (such as targeted phishing, or _spearphishing_, attacks).
 
-Password managers are often implemented as browser extensions, and browsers also provide their own built-in password managers.
+- If the website does not have a record, it sends an email to the address, telling the addressee that someone entered this email in a "password reset" form, but that the site did not have a record for this email address. This helps a legitimate account-holder who has multiple email address, and entered the wrong email adress in the password reset form.
+
+- If the website does have a record for this email, then the website:
+
+  - Generates a reset token, which is a random number, and stores the token alongside the record. The token is given an expiry timestamp.
+  - Sets the token value as a URL parameter to the reset URL, like: `https://example.org/reset?<reset-token>`.
+  - Sends an email to the address the user gave, containing the link and asking the user to click it.
+
+When the user clicks the link, the reset page extracts the URL parameter and looks for a matching stored reset token. If a reset token is found and has not expired, the website allows the user to enter a new password: this follows similar rules to the registration form, to enable the new password to be recognized by a password manager.
+
+Finally, the website emails the user confirmation that their password has been changed.
+
+For more information, see:
+
+- [Everything you ever wanted to know about building a secure password reset feature](https://www.troyhunt.com/everything-you-ever-wanted-to-know/)
+- [Forgot Password Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html)
+
+## Password authentication practices
+
+### Form design
+
+Well-designed forms help users work with passwords effectively, and also help password managers integrate with a site.
+
+A password manager is an application that enables users to store passwords, so users don't have to remember their passwords. Password managers may also autofill passwords in login forms and generate strong passwords for users. Password managers are often implemented as browser extensions, and browsers also provide their own built-in password managers.
+
+Password managers help reduce the threat of guessing and credential stuffing attacks, by making it much easier for users to have strong passwords and reducing the degree of password reuse.
 
 Typically, on a registration form, a password manager will:
 
@@ -97,15 +123,7 @@ Typically, on a registration form, a password manager will:
 
 On a login form, a password manager will recognize that the user is being asked to provide their username and password, and autofill them from its storage.
 
-Password managers bring new risks to the security landscape by providing a new target for attackers. The risks are especially pronounced when passwords are synchronized across devices or stored off the device.
-
-However, password managers help reduce the threat of guessing and credential stuffing attacks, by making it much easier for users to have strong passwords and reducing the degree of password reuse. They can also help with phishing attacks, since a password manager will know that `paypa1.com` is not `paypal.com`, and will not autofill its login form.
-
-So password managers provide a net security benefit, and developers should help them integrate with their websites.
-
-## Form design
-
-Password managers help users choose stronger passwords and reduce the likelihood of password reuse. Following the practices listed below helps password managers work with your site:
+Following the practices below help password managers recognize forms they need to interact with, the elements they contain, and the points at which they need to be involved.
 
 - Registration, login, password change, and password reset processes should each have their own `<form>` element.
 - Forms should give a clear indication that the form has been submitted. This means either navigating to another page on submission, or simulating a navigation with `History.pushState()` or `History.replaceState()`.
@@ -124,7 +142,7 @@ For more information, see:
 - [Making password managers play ball with your login form](https://hidde.blog/making-password-managers-play-ball-with-your-login-form/)
 - [Create Amazing Password Forms](https://www.chromium.org/developers/design-documents/create-amazing-password-forms/)
 
-## Sending passwords
+### Sending passwords
 
 To reduce the risk of an attacker intercepting passwords in transit, a site must use TLS for all pages where the user enters a password.
 
@@ -134,7 +152,7 @@ Sites are very strongly encouraged to use TLS for all pages, and many features o
 
 TODO: better docs on how to set this up? Using Let's Encrypt or a hosting service?
 
-## Choosing passwords
+### Choosing passwords
 
 The risk of guessing attacks can be reduced if users choose stronger passwords, and the policies websites follow can help with this.
 
@@ -159,11 +177,11 @@ For more information, see:
 - [NIST Digital Identity Guidelines: Authentication and Lifecycle Management](https://pages.nist.gov/800-63-3/sp800-63b.html)
 - [Passwords Evolved: Authentication Guidance for the Modern Era - Troy Hunt](https://www.troyhunt.com/passwords-evolved-authentication-guidance-for-the-modern-era/)
 
-## Storing passwords
+### Storing passwords
 
 Password-based authentication must store passwords, of course, and must try to protect users even if an attacker gets access to the database containing the stored passwords.
 
-### Hashing passwords
+#### Hashing passwords
 
 Websites must not store passwords in plaintext form. Instead, when the user registers with a new password (or changes their password), the password is hashed and the hash is stored. When the user presents their password on sign-in, the site:
 
@@ -177,7 +195,7 @@ This means that if an attacker gets access to the database, they will typically 
 
 Hash functions that are designed for hashing passwords typically allow you to configure the amount of work involved to create the hash, so they can be made slower or faster depending on the expected capabilites of the attacker.
 
-### Precomputed hash tables
+#### Precomputed hash tables
 
 Rather than calculate hash tables themselves, attackers can look up the password corresponding to a hash in a precomputed table (also known as a [rainbow table](https://en.wikipedia.org/wiki/Rainbow_table)) mapping possible passwords to their hashes:
 
@@ -189,7 +207,7 @@ Rather than calculate hash tables themselves, attackers can look up the password
 
 Although these tables may be very large, such attacks can be effective because table lookup is a fast operation.
 
-### Salt and pepper
+#### Salt and pepper
 
 To defeat attacks that use precomputed hash tables, _salt_ must be added to the password before it is hashed. Salt is a random value unique to each password. It does not have to be secret: salt is stored alongside the hashed password. However, it prevents an attacker from using precomputed hash values, because the salt means that a given password will hash to a different value.
 
@@ -198,7 +216,7 @@ As an additional defense, websites may also add _pepper_ to the hash function's 
 - Not unique: the same value is used for all the passwords in the database.
 - A secret: it must not be stored in the database itself but in a separate location such as a hardware security module (HSM).
 
-### Hashing algorithms
+#### Hashing algorithms
 
 Websites should use standard algorithms to hash passwords. These algorithms support all the features discussed above. The [OWASP guide to password storage](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#password-hashing-algorithms) recommends, in order of preference:
 
