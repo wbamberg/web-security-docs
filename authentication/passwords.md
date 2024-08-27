@@ -26,6 +26,8 @@ Looking at these flows, we can see some of the ways an attacker can impersonate 
 4. **Database compromise**: an attacker could break into the server and retrieve the database of stored records.
 5. **Phishing**: an attacker could trick the user into handing their password to the attacker. For example, an attacker might create a page that looks just like the target site's login page, and send the target user an email containing a link to the fake page, asking them to sign in.
 
+In the next sections we'll look in more detail about how to implement the main flows needed for a password-based authentication system, and which practices should be followed for particular steps. These practices help to minimize the threat of the listed attacks, but as we'll see, it is impossible to eliminate them completely.
+
 ## Password authentication flows
 
 A password authentication system consists of three main flows:
@@ -226,3 +228,5 @@ Websites should use standard algorithms to hash passwords. These algorithms supp
 4. [PBKDF2](https://en.wikipedia.org/wiki/PBKDF2)
 
 Websites should use password storage and verification functions provided by a reputable framework, rather than trying to implement their own. For example, [Django](https://docs.djangoproject.com/en/5.0/topics/auth/passwords/) uses PBKDF2 by default but enables you to use a different algorithm if you choose.
+
+## Weaknesses of password-based authentication
