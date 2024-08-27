@@ -13,7 +13,7 @@ All these abilities, and more, make user account access an important target for 
 
 In this set of guides we'll looks at the main techniques available for authenticating users on the web, and good practices for them.
 
-- [Passwords](passwords)
+- [Passwords](authentication/passwords)
 - [One-time passwords](one-time-passwords)
 - [Federated identity](federated-identity)
 - [Web Authentication](web-authentication)
