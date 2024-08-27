@@ -91,7 +91,7 @@ When the user asks to reset their password, the website asks the user to enter t
 
 The website back end then checks whether it has a record for this email address. _Whether or not it does have a record_, the website gives the same message to the user: that it has sent an email to the address given, with further instructions. Providing the same message in both cases prevents an attacker from finding out whether a given email address is associated with an account: this information could be used in further attacks (such as targeted phishing, or _spearphishing_, attacks).
 
-- If the website does not have a record, it sends an email to the address, telling the addressee that someone entered this email in a "password reset" form, but that the site did not have a record for this email address. This helps a legitimate account-holder who has multiple email address, and entered the wrong email adress in the password reset form.
+- If the website does not have a record, it sends an email to the address, telling the addressee that someone entered this email in a "password reset" form, but that the site did not have a record for this email address. This helps a legitimate account-holder who has multiple email addresses, and entered the wrong address in the password reset form.
 
 - If the website does have a record for this email, then the website:
 
