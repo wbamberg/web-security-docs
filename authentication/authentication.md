@@ -14,7 +14,7 @@ All these abilities, and more, make user account access an important target for 
 In this set of guides we'll looks at the main techniques available for authenticating users on the web, and good practices for them.
 
 <dl>
-<dt><a href="passwords.html">Passwords</a></dt>
+<dt><a href="passwords">Passwords</a></dt>
 </dl>
 
 ## Passwords
