@@ -229,6 +229,10 @@ Websites should use standard algorithms to hash passwords. These algorithms supp
 
 Websites should use password storage and verification functions provided by a reputable framework, rather than trying to implement their own. For example, [Django](https://docs.djangoproject.com/en/5.0/topics/auth/passwords/) uses PBKDF2 by default but enables you to use a different algorithm if you choose.
 
+## Framework support for password authentication
+
+?? Maybe have a survey of the support some frameworks offer?
+
 ## Weaknesses of password-based authentication
 
 The practices described above help reduce the threats posed to a password-based authentication system, but passwords remain an inherently vulnerable authentication method:
