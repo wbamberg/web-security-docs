@@ -125,7 +125,7 @@ Typically, on a registration form, a password manager will:
 
 On a login form, a password manager will recognize that the user is being asked to provide their username and password, and autofill them from its storage.
 
-Following the practices below help password managers recognize forms they need to interact with, the elements they contain, and the points at which they need to be involved.
+Following the practices below helps password managers recognize forms they need to interact with, the elements they contain, and the points at which they need to be involved.
 
 - Registration, login, password change, and password reset processes should each have their own `<form>` element.
 - Forms should give a clear indication that the form has been submitted. This means either navigating to another page on submission, or simulating a navigation with `History.pushState()` or `History.replaceState()`.
@@ -230,3 +230,11 @@ Websites should use standard algorithms to hash passwords. These algorithms supp
 Websites should use password storage and verification functions provided by a reputable framework, rather than trying to implement their own. For example, [Django](https://docs.djangoproject.com/en/5.0/topics/auth/passwords/) uses PBKDF2 by default but enables you to use a different algorithm if you choose.
 
 ## Weaknesses of password-based authentication
+
+The practices described above help reduce the threats posed to a password-based authentication system, but passwords remain an inherently vulnerable authentication method:
+
+- Although password managers and good password policies can help users choose strong passwords and not reuse passwords, they can't guarantee either outcome, leaving users vulnerable to credential stuffing and guessing attacks.
+
+- Even if users have strong passwords and do not reuse them, users remain vulnerable to phishing attacks.
+
+To address these attacks, developer should consider alternative methods, either instead of passwords or as additional authentication factors.
